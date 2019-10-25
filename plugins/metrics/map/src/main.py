@@ -10,7 +10,7 @@ from supervisely_lib.metric.iou_metric import IOU
 
 
 CONFIDENCE_TAG_NAME = 'confidence_tag_name'
-
+CONFIDENCE_THRESHOLD = 'confidence_threshold'
 
 def main():
     settings = load_json_file(sly.TaskPaths.TASK_CONFIG_PATH)
@@ -23,7 +23,9 @@ def main():
             f'{CONFIDENCE_TAG_NAME!r} field is missing. Please set the tag name to read prediction confidence from.')
 
     confidence_tag_name = settings[CONFIDENCE_TAG_NAME]
-    metric = MAPMetric(settings[CLASSES_MAPPING], settings[IOU], confidence_tag_name=confidence_tag_name)
+    confidence_threshold = settings.get(CONFIDENCE_THRESHOLD, 0.0)
+    metric = MAPMetric(settings[CLASSES_MAPPING], settings[IOU], confidence_tag_name=confidence_tag_name,
+                       confidence_threshold=confidence_threshold)
     applier = sly.MetricProjectsApplier(metric, settings)
 
     # Input sanity checks.

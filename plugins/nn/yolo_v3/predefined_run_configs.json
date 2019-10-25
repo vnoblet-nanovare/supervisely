@@ -40,7 +40,8 @@
       "model": {
         "gpu_device": 0,
         "confidence_tag_name": "confidence",
-        "num_processes": 1
+        "num_processes": 1,
+        "min_confidence_threshold": 0.5
       },
       "mode": {
         "name": "full_image",
@@ -62,7 +63,8 @@
       "model": {
         "gpu_device": 0,
         "confidence_tag_name": "confidence",
-        "num_processes": 1
+        "num_processes": 1,
+        "min_confidence_threshold": 0.5
       },
       "mode": {
         "name": "roi",
@@ -92,7 +94,8 @@
       "model": {
         "gpu_device": 0,
         "confidence_tag_name": "confidence",
-        "num_processes": 1
+        "num_processes": 1,
+        "min_confidence_threshold": 0.5
       },
       "mode": {
         "name": "bboxes",
@@ -123,7 +126,8 @@
       "model": {
         "gpu_device": 0,
         "confidence_tag_name": "confidence",
-        "num_processes": 1
+        "num_processes": 1,
+        "min_confidence_threshold": 0.5
       },
       "mode": {
         "name": "sliding_window_det",

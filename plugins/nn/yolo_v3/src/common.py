@@ -36,8 +36,3 @@ def yolo_preds_to_sly_rects(detections, idx_to_class, confidence_tag_meta):
             label = label.add_tag(confidence_tag)
             labels.append(label)
     return labels
-
-
-def infer_on_image(image, model, idx_to_class, confidence_thresh, confidence_tag_meta, num_classes):
-    detections_result = detect_pyimage(model, num_classes, image, thresh=confidence_thresh)
-    return yolo_preds_to_sly_rects(detections_result, idx_to_class, confidence_tag_meta)

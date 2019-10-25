@@ -28,6 +28,14 @@ from metrics import Dice, NLLLoss, BCEDiceLoss
 from debug_saver import DebugSaver
 
 
+# TODO upgrade base pytorch and clean this up.
+def unwrap_tensor(t):
+    if torch.__version__[:3] == '0.3':
+        return t.data[0]
+    else:
+        return t.data.item()
+
+
 # decrease lr after 'patience' calls w/out loss improvement
 #TODO@ Factor out policy from here and smarttool.
 class LRPolicyWithPatience:
@@ -241,7 +249,7 @@ class UnetV2Trainer(SuperviselyModelTrainer):
             for name, metric in self.val_metrics.items():
                 metric_value = metric(outputs, targets)
                 if isinstance(metric_value, torch.autograd.Variable):  # for val loss
-                    metric_value = metric_value.data[0]
+                    metric_value = unwrap_tensor(metric_value)
                 metrics_values[name] += metric_value * full_batch_size
             samples_cnt += full_batch_size
 
@@ -295,7 +303,7 @@ class UnetV2Trainer(SuperviselyModelTrainer):
                 loss.backward()
                 policy.optimizer.step()
 
-                metric_values_train = {'loss': loss.data[0]}
+                metric_values_train = {'loss': unwrap_tensor(loss)}
                 for name, metric in self.metrics.items():
                     metric_values_train[name] = metric(outputs, targets)
 

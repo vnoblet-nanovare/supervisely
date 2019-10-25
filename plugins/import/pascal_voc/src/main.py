@@ -148,11 +148,11 @@ class ImporterPascalVOCSegm:
             for sample_name in sample_names:
                 src_img_path = images_filenames[sample_name]
                 src_img_filename = os.path.basename(src_img_path)
-                segm_path = os.path.join(self.segm_dir, sample_name, MASKS_EXTENSION)
+                segm_path = os.path.join(self.segm_dir, sample_name + MASKS_EXTENSION)
 
                 inst_path = None
                 if self.with_instances:
-                    inst_path = os.path.join(self.inst_dir, sample_name, MASKS_EXTENSION)
+                    inst_path = os.path.join(self.inst_dir, sample_name + MASKS_EXTENSION)
 
                 if all((x is None) or os.path.isfile(x) for x in [src_img_path, segm_path, inst_path]):
                     try:

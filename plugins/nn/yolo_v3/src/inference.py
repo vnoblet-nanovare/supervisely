@@ -2,17 +2,17 @@
 
 import os
 
-from darknet_utils import load_net
+from darknet_utils import load_net, detect_pyimage as darknet_detect_pyimage, detect as darknet_detect
 
 import supervisely_lib as sly
 from supervisely_lib.nn.hosted.inference_single_image import SingleImageInferenceBase, GPU_DEVICE
 from supervisely_lib.nn.hosted.inference_batch import BatchInferenceApplier
 from supervisely_lib.nn.hosted.inference_batch_multiprocess import BatchInferenceMultiprocessApplier
-from supervisely_lib.nn.hosted.inference_modes import InfModeFullImage, CONFIDENCE
+from supervisely_lib.nn.hosted.inference_modes import InfModeFullImage, CONFIDENCE, CONFIDENCE_TAG_NAME
 import common
 from yolo_config_utils import read_config, replace_config_section_values, write_config, MODEL_CFG, NET_SECTION
 
-
+MIN_CONFIDENCE_THRESHOLD = 'min_confidence_threshold'
 NUM_PROCESSES = 'num_processes'
 
 
@@ -21,15 +21,15 @@ class YOLOSingleImageApplier(SingleImageInferenceBase):
     def __init__(self, task_model_config=None, _load_model_weights=True):
         sly.logger.info('YOLOv3 inference init started.')
         super().__init__(task_model_config, _load_model_weights=_load_model_weights)
-        self.confidence_thresh = self._config['min_confidence_threshold']
+        self.confidence_thresh = self._config[MIN_CONFIDENCE_THRESHOLD]
         sly.logger.info('YOLOv3 inference init done.')
 
     @staticmethod
     def get_default_config():
         return {
-            'min_confidence_threshold': 0.5,
+            MIN_CONFIDENCE_THRESHOLD: 0.5,
             GPU_DEVICE: 0,
-            'confidence_tag_name': CONFIDENCE,
+            CONFIDENCE_TAG_NAME: CONFIDENCE,
             NUM_PROCESSES: 1
         }
 
@@ -45,7 +45,7 @@ class YOLOSingleImageApplier(SingleImageInferenceBase):
         return sly.TagMetaCollection(items=[self.confidence_tag_meta])
 
     def _load_train_config(self):
-        self.confidence_tag_meta = sly.TagMeta(self._config['confidence_tag_name'], sly.TagValueType.ANY_NUMBER)
+        self.confidence_tag_meta = sly.TagMeta(self._config[CONFIDENCE_TAG_NAME], sly.TagValueType.ANY_NUMBER)
         super()._load_train_config()
 
     def _validate_model_config(self, config):
@@ -68,14 +68,20 @@ class YOLOSingleImageApplier(SingleImageInferenceBase):
                               os.path.join(sly.TaskPaths.MODEL_DIR, 'model.weights').encode('utf-8'), 0)
         sly.logger.info('Weights are loaded.')
 
+    def _raw_detections_to_ann(self, detections_raw, img_size):
+        labels = common.yolo_preds_to_sly_rects(
+            detections_raw, self.out_class_mapping, self.confidence_tag_meta)
+        return sly.Annotation(img_size, labels=labels)
+
     def inference(self, img, ann):
-        labels = common.infer_on_image(image=img,
-                                       model=self.model,
-                                       idx_to_class=self.out_class_mapping,
-                                       confidence_thresh=self.confidence_thresh,
-                                       confidence_tag_meta=self.confidence_tag_meta,
-                                       num_classes=len(self.class_title_to_idx))
-        return sly.Annotation(ann.img_size, labels=labels)
+        detections_raw = darknet_detect_pyimage(
+            net=self.model, num_classes=len(self.class_title_to_idx), image=img, thresh=self.confidence_thresh)
+        return self._raw_detections_to_ann(detections_raw, ann.img_size)
+    
+    def inference_image_file(self, image_file, ann):
+        detections_raw = darknet_detect(net=self.model, num_classes=len(self.class_title_to_idx),
+                                        image=image_file.encode('utf-8'), thresh=self.confidence_thresh)
+        return self._raw_detections_to_ann(detections_raw, ann.img_size)
 
 
 def main():
