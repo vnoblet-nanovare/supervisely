@@ -127,8 +127,7 @@ class UnetV2Trainer(SuperviselyModelTrainer):
 
     def _determine_config(self):
         super()._determine_config()
-        self.device_ids = self.config['gpu_devices']
-        sly.env.remap_gpu_devices(self.device_ids)
+        self.device_ids = sly.env.remap_gpu_devices(self.config['gpu_devices'])
 
     def _determine_model_classes(self):
         super()._determine_model_classes_segmentation(bkg_input_idx=self.bkg_input_idx)
