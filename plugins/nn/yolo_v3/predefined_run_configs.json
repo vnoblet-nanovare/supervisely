@@ -28,6 +28,7 @@
       "checkpoint_every": 1,
       "lr": 0.0001,
       "weights_init_type": "transfer_learning",
+      "recompute_anchors": false,
       "gpu_devices": [
         0
       ]

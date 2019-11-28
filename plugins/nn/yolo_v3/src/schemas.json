@@ -47,7 +47,7 @@
   },
   "training_config": {
     "type": "object",
-    "additionalProperties": false,
+    "additionalProperties": true,
     "required": [
       "batch_size",
       "bn_momentum",

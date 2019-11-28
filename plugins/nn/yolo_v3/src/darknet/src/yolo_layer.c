@@ -240,7 +240,12 @@ void forward_yolo_layer(const layer l, network net)
     }
     *(l.cost) = pow(mag_array(l.delta, l.outputs * l.batch), 2);
     if (net.allow_print) {
-        printf("Region %d Avg IOU: %f, Class: %f, Obj: %f, No Obj: %f, .5R: %f, .75R: %f,  count: %d\n", net.index, avg_iou/count, avg_cat/class_count, avg_obj/count, avg_anyobj/(l.w*l.h*l.n*l.batch), recall/count, recall75/count, count);
+        const double count_regularized = 1e-3 + count;
+        const double class_count_regularized = 1e-3 + class_count;
+        printf("Region %d Avg IOU: %f, Class: %f, Obj: %f, No Obj: %f, .5R: %f, .75R: %f,  count: %d\n",
+            net.index, avg_iou/count_regularized, avg_cat/class_count_regularized,
+            avg_obj/count_regularized, avg_anyobj/(l.w*l.h*l.n*l.batch),
+            recall/count_regularized, recall75/count_regularized, count);
     }
 }
 

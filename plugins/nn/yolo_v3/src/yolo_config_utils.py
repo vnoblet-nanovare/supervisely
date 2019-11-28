@@ -25,7 +25,7 @@ def read_config(file_path):
                 current_section.data.append([stripped])
             else:
                 name, value = stripped.split('=', maxsplit=1)
-                current_section.data.append([name, value])
+                current_section.data.append([name.strip(), value.strip()])
     sections.append(current_section)
     return sections
 

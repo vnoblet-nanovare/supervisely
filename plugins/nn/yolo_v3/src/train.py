@@ -4,6 +4,9 @@ import os
 import json
 import math
 import numpy as np
+import random
+
+import cv2
 
 import supervisely_lib as sly
 import supervisely_lib.nn.dataset
@@ -18,7 +21,30 @@ from yolo_config_utils import find_data_item, read_config, replace_config_sectio
     CONVOLUTIONAL_SECTION, NET_SECTION, YOLO_SECTION
 from ctypes_utils import train_yolo, int1D_to_p_int, float2D_to_pp_float, string_list_pp_char
 
-from supervisely_lib.nn.hosted.trainer import SuperviselyModelTrainer
+from supervisely_lib.nn.hosted.trainer import SuperviselyModelTrainer, DATASET_TAGS, TRAIN
+
+
+# Computes anchors in relative (to image size) units.
+# To get the values to write to the network config, multiply by input size in pixels.
+def compute_anchors_relative(project, num_anchors, train_tag, max_iters=100, num_attempts=1):
+    all_box_shapes_list = []
+    for ds in project:
+        for item in ds:
+            ann_path = ds.get_ann_path(item)
+            ann = sly.Annotation.load_json_file(ann_path, project.meta)
+            if train_tag is None or ann.img_tags.has_key(train_tag):
+                for label in ann.labels:
+                    raw_bbox = label.geometry.to_bbox()
+                    w = raw_bbox.width / float(ann.img_size[1])
+                    h = raw_bbox.height / float(ann.img_size[0])
+                    all_box_shapes_list.append((w, h))
+    return cv2.kmeans(
+        data=np.array(all_box_shapes_list, dtype=np.float32),
+        K=num_anchors,
+        bestLabels=None,
+        criteria=(cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, max_iters, 0),
+        attempts=num_attempts,
+        flags=cv2.KMEANS_PP_CENTERS)
 
 
 class YOLOTrainer(SuperviselyModelTrainer):
@@ -105,19 +131,65 @@ class YOLOTrainer(SuperviselyModelTrainer):
                 'dataset_purpose': the_name, 'dataset_tag': the_tag, 'sample_cnt': len(samples_lst)
             })
 
+    def _maybe_recomputed_anchors_str(self, width, height, source_yolo_config):
+        if not self.config.get('recompute_anchors', False):
+            return None
+        else:
+            logger.info('Started recomputing anchors based on training data.')
+
+            # Check the source config file to find out the number of anchors.
+            num_anchors = -1
+            for section_idx, section in enumerate(source_yolo_config):
+                if section.name == YOLO_SECTION:
+                    anchors_item = find_data_item(section, 'anchors')
+                    num_anchor_coords = len(anchors_item[1].split(','))
+                    if num_anchor_coords % 2 != 0:
+                        raise ValueError(
+                            'Source Yolo config has an odd-length list in the anchors config. This value is invalid, '
+                            'the anchors value must be a list of (w, h) pairs. Got {!r}'.format(anchors_item[1]))
+                    num_anchors = num_anchor_coords // 2
+                    break
+
+            if num_anchors <= 0:
+                raise ValueError('Source Yolo config has no anchors specified. Unable to determine the correct number '
+                                 'of anchors to be recomputed.')
+
+            logger.info('Source Yolo config uses {} anchors.'.format(num_anchors))
+
+            _, _, relative_anchors = compute_anchors_relative(
+                self.project,
+                num_anchors=num_anchors,
+                train_tag=self.config[DATASET_TAGS][TRAIN],
+                max_iters=200,
+                num_attempts=10)
+            logger.info('Finished recomputing anchors.')
+            # Converting relative to pixel sizes.
+            # Yolo anchors are (w, h), NOT our usual (h,w).
+            anchors = np.round(relative_anchors * np.array([[width, height]])).astype(np.int32)
+            # Sort by area and convert to string.
+            anchors = sorted(anchors.tolist(), key=lambda x: x[0] * x[1])
+            anchors_str = ',  '.join(','.join(str(x) for x in anchor) for anchor in anchors)
+            logger.info('Resulting recomputed anchors: {}'.format(anchors_str))
+            return anchors_str
+
     def _make_yolo_train_config(self):
         src_size = self.config['input_size']
-        input_size = (src_size['height'], src_size['width'])
+        height = src_size['height']
+        width = src_size['width']
 
         yolo_config = read_config(os.path.join(sly.TaskPaths.MODEL_DIR, MODEL_CFG))
         [net_config] = [section for section in yolo_config if section.name == NET_SECTION]
         net_overrides = {
-            'height': input_size[0],
-            'width': input_size[1],
+            'height': height,
+            'width': width,
             'batch': self.config['batch_size']['train'],
             'subdivisions': self.config['subdivisions']['train'],
             'learning_rate': self.config['lr']
         }
+
+        # Optionally recompute the anchors
+        recomputed_anchors_str = self._maybe_recomputed_anchors_str(width, height, yolo_config)
+
         replace_config_section_values(net_config, net_overrides)
 
         for section_idx, section in enumerate(yolo_config):
@@ -135,6 +207,10 @@ class YOLOTrainer(SuperviselyModelTrainer):
 
                 filters_item = find_data_item(last_convolution, 'filters')
                 filters_item[1] = (len(self.out_classes) + 5) * 3
+
+                if recomputed_anchors_str is not None:
+                    anchors_item = find_data_item(section, 'anchors')
+                    anchors_item[1] = recomputed_anchors_str
 
         first_yolo_section_idx = next(idx for idx, section in enumerate(yolo_config) if section.name == YOLO_SECTION)
         # Compute the index of the last layer to be loaded for transfer learning.

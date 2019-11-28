@@ -212,7 +212,11 @@ void forward_detection_layer(const detection_layer l, network net)
         *(l.cost) = pow(mag_array(l.delta, l.outputs * l.batch), 2);
 
 
-        printf("Detection Avg IOU: %f, Pos Cat: %f, All Cat: %f, Pos Obj: %f, Any Obj: %f, count: %d\n", avg_iou/count, avg_cat/count, avg_allcat/(count*l.classes), avg_obj/count, avg_anyobj/(l.batch*locations*l.n), count);
+        const double count_regularized = 1e-3 + count;
+        printf("Detection Avg IOU: %f, Pos Cat: %f, All Cat: %f, Pos Obj: %f, Any Obj: %f, count: %d\n",
+            avg_iou/count_regularized, avg_cat/count_regularized,
+            avg_allcat/(count_regularized*l.classes), avg_obj/count_regularized,
+            avg_anyobj/(l.batch*locations*l.n), count_regularized);
         //if(l.reorg) reorg(l.delta, l.w*l.h, size*l.n, l.batch, 0);
     }
 }

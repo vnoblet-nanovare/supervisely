@@ -8,6 +8,7 @@ import numpy as np
 
 import pydicom
 from pydicom.multival import MultiValue
+from pydicom.pixel_data_handlers.util import convert_color_space
 
 import supervisely_lib as sly
 
@@ -88,13 +89,18 @@ def prepare_dicom_image(im_arr, dicom_obj):
 
 
 def extract_images_from_dicom(dicom_obj):
-    dcm_channels = dicom_obj.pixel_array.shape
+    pixel_array = dicom_obj.pixel_array
+    interpretation_str = str(getattr(dicom_obj, 'PhotometricInterpretation', None))
+    if interpretation_str in ('YBR_FULL_422', 'YBR_FULL'):
+        pixel_array = convert_color_space(pixel_array, interpretation_str, 'RGB')
+    dcm_channels = pixel_array.shape
+
     images = []
     if (len(dcm_channels) > 3 and dcm_channels[-1] == 3) or (len(dcm_channels) == 3 and dcm_channels[-1] != 3):
         for i in range(dcm_channels[0]):
-            images.append(prepare_dicom_image(dicom_obj.pixel_array[i], dicom_obj))
+            images.append(prepare_dicom_image(pixel_array[i], dicom_obj))
     else:
-        images.append(prepare_dicom_image(dicom_obj.pixel_array, dicom_obj))
+        images.append(prepare_dicom_image(pixel_array, dicom_obj))
     return images
 
 
