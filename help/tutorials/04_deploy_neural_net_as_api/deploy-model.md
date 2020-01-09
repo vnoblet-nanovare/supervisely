@@ -35,7 +35,7 @@ Choose this method if you want to deploy model in production environment without
 
 ```sh
 $ docker run --rm -it \
-    --runtime=nvidia
+    --runtime=nvidia \
     -p 5000:5000 \
     -v '<folder with extracted model weights>:/sly_task_data/model' \
     <model docker image> \
@@ -46,7 +46,7 @@ for example
 
 ```sh
 $ docker run --rm -it \
-    --runtime=nvidia
+    --runtime=nvidia \
     -p 5000:5000 \
     -v '/home/user/Downloads/YOLO v3 (COCO):/sly_task_data/model' \
     supervisely/nn-yolo-v3 python \
@@ -58,4 +58,9 @@ $ docker run --rm -it \
 
 ```
 curl -X POST -F "image=@[/path/to/image.png]" 0.0.0.0:5000/model/inference
+```
+
+for example
+```sh
+curl -X POST -F "image=@/home/user/Downloads/01.jpg" 0.0.0.0:5000/model/inference
 ```
