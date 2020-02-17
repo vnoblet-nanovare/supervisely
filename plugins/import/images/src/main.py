@@ -1,8 +1,9 @@
 # coding: utf-8
 
 import os
-
 from collections import defaultdict
+import cv2
+
 import supervisely_lib as sly
 from supervisely_lib import fs
 from supervisely_lib import TaskPaths
@@ -36,6 +37,9 @@ def convert():
     task_settings = load_json_file(sly.TaskPaths.TASK_CONFIG_PATH)
     in_datasets = find_input_datasets()
 
+    convert_options = task_settings['options']
+    normalize_exif = convert_options.get('normalize_exif')
+
     pr = sly.Project(os.path.join(sly.TaskPaths.RESULTS_DIR, task_settings['res_names']['project']),
                      sly.OpenMode.CREATE)
 
@@ -48,6 +52,11 @@ def convert():
         for img_path in img_paths:
             try:
                 item_name = os.path.basename(img_path)
+
+                if normalize_exif:
+                    img = sly.image.read(img_path)
+                    sly.image.write(img_path, img)
+
                 ds.add_item_file(item_name, img_path, _use_hardlink=True)
             except Exception as e:
                 exc_str = str(e)

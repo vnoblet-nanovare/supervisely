@@ -1,6 +1,7 @@
 # coding: utf-8
 
 import os
+import tempfile
 
 from darknet_utils import load_net, detect_pyimage as darknet_detect_pyimage, detect as darknet_detect
 
@@ -53,7 +54,7 @@ class YOLOSingleImageApplier(SingleImageInferenceBase):
 
     def _construct_and_fill_model(self):
         super()._construct_and_fill_model()
-        self.device_ids = sly.env.remap_gpu_devices([self._config[GPU_DEVICE]])
+        sly.env.remap_gpu_devices([self._config[GPU_DEVICE]])
 
         yolo_config = read_config(os.path.join(sly.TaskPaths.MODEL_DIR, MODEL_CFG))
         [net_config] = [section for section in yolo_config if section.name == NET_SECTION]
@@ -62,10 +63,13 @@ class YOLOSingleImageApplier(SingleImageInferenceBase):
             'subdivisions': 1
         }
         replace_config_section_values(net_config, net_overrides)
-        effective_model_cfg_path = os.path.join('/tmp', MODEL_CFG)
+        effective_cfg_file_id, effective_model_cfg_path = tempfile.mkstemp(suffix='.cfg')
+        os.close(effective_cfg_file_id)
         write_config(yolo_config, effective_model_cfg_path)
         self.model = load_net(effective_model_cfg_path.encode('utf-8'),
                               os.path.join(sly.TaskPaths.MODEL_DIR, 'model.weights').encode('utf-8'), 0)
+        # Clean up the tweaked config file.
+        os.remove(effective_model_cfg_path)
         sly.logger.info('Weights are loaded.')
 
     def _raw_detections_to_ann(self, detections_raw, img_size):
