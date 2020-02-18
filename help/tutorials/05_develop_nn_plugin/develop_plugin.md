@@ -2,7 +2,7 @@
 
 Before developing your custom NN plugin, it is recommended to look at the following tutorials
 
-1. [Agent explanation](../../../../agent)
+1. [Agent explanation](../../../agent)
 2. [How to create plugin](../01_create_new_plugin/how_to_create_plugin.md) 
 3. [General detailed guide: Integrate any custom neural network](../03_custom_neural_net_plugin/custom_nn_plugin.md)
 4. [Easy guide: Integrate a custom Pytorch Segmentation neural network](../02_pytorch_easy_segmentation_plugin/pytorch_segmentation_integration_template.md)
