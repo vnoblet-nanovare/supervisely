@@ -38,3 +38,7 @@ For now we have the following resources available:
 * [Add augmentations and prepare data for training a detection model](./jupyterlab_scripts/src/cookbook/training_data_for_detection/training_data_for_detection.ipynb)
 * [Add augmentations and prepare data for training a segmentation model](./jupyterlab_scripts/src/cookbook/training_data_for_segmentation/training_data_for_segmentation.ipynb)
 * [Upload a project using  using Supervisely API](./jupyterlab_scripts/src/cookbook/upload_project/upload_project.ipynb)
+
+### How it works
+
+* [Exam report explanation](./tutorials/06_exam_report_explanation/06_exam_report_explanation.md)
