@@ -1,12 +1,14 @@
 # coding: utf-8
 
 import os
+import pcl
+
 from supervisely_lib.io.json import load_json_file
 from supervisely_lib import TaskPaths
 import supervisely_lib as sly
 from supervisely_lib.video.import_utils import get_dataset_name
 from supervisely_lib.api.module_api import ApiField
-from supervisely_lib.pointcloud.pointcloud import is_valid_ext, ALLOWED_POINTCLOUD_EXTENSIONS
+from supervisely_lib.pointcloud.pointcloud import ALLOWED_POINTCLOUD_EXTENSIONS
 
 DEFAULT_DATASET_NAME = 'ds0'
 root_ds_name = DEFAULT_DATASET_NAME
@@ -56,30 +58,48 @@ def add_pointclouds_to_project():
                 related_items_info[item_dir][item_name_processed] = []
             related_items_info[item_dir][item_name_processed].append(file_info)
 
+    project_dir = os.path.join(sly.TaskPaths.DATA_DIR, project_name)
+
+    progress = sly.Progress('Processing', len(files_list), sly.logger)
     added_items = []
     for file_info in files_list:
         ds_info = None
         original_path = file_info["filename"]
         if original_path in related_items:
+            progress.iter_done_report()
             continue
 
         try:
             file_name = sly.fs.get_file_name_with_ext(original_path)
             ext = sly.fs.get_file_ext(original_path)
 
-            hash = file_info["hash"]
-
-            if is_valid_ext(ext):
+            if ext == '.ply':
                 if project_info is None:
                     project_info = api.project.create(workspace_id, project_name, type=sly.ProjectType.POINT_CLOUDS, change_name_if_conflict=True)
                 if ds_info is None:
                     ds_name = get_dataset_name(original_path)
                     ds_info = api.dataset.get_or_create(project_info.id, ds_name)
-                item_name = api.pointcloud.get_free_name(ds_info.id, file_name)
-                item_info = api.pointcloud.upload_hash(ds_info.id, item_name, hash)
+
+                save_path = project_dir + original_path
+
+                api.task.download_import_file(task_id, original_path, save_path)
+                points = pcl.load(save_path)
+
+                new_file_name = sly.fs.get_file_name(file_name) + ".pcd"
+                pcd_save_path = os.path.join(os.path.dirname(save_path), new_file_name)
+                pcl.save(points, pcd_save_path)
+
+                item_name = api.pointcloud.get_free_name(ds_info.id, new_file_name)
+                item_info = api.pointcloud.upload_path(ds_info.id, item_name, pcd_save_path)
+
                 added_items.append((ds_info, item_info, original_path))
+            else:
+                raise ValueError("Plugin supports only *.ply files.")
+
         except Exception as e:
-            sly.logger.warning("File skipped {!r}: error occurred during processing {!r}".format(original_path, str(e)))
+            sly.logger.warning("File skipped {!r}: error occurred during processing - {!r}".format(original_path, str(e)))
+
+        progress.iter_done_report()
 
     # add related images for all added items
     for ds_info, item_info, import_path in added_items:
