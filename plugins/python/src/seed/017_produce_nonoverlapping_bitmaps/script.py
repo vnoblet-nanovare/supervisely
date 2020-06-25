@@ -48,17 +48,19 @@ def convert_to_nonoverlapping(src_ann: sly.Annotation) -> sly.Annotation:
     new_labels = []
     for idx, lbl in enumerate(src_ann.labels, start=1):
         new_cls = dst_project_meta.obj_classes.get(lbl.obj_class.name)
-        if account_label(lbl):
-            mask = common_img == idx
-            g = lbl.geometry
-            new_bmp = sly.Bitmap(data=mask,
-                                 labeler_login=g.labeler_login,
-                                 updated_at=g.updated_at,
-                                 created_at=g.created_at)
-            new_lbl = lbl.clone(geometry=new_bmp, obj_class=new_cls)
-        else:
+        if not account_label(lbl):
             new_lbl = lbl.clone(obj_class=new_cls)
-        new_labels.append(new_lbl)
+            new_labels.append(new_lbl)
+        else:
+            mask = common_img == idx
+            if np.any(mask):  # figure may be entirely covered by others
+                g = lbl.geometry
+                new_bmp = sly.Bitmap(data=mask,
+                                     labeler_login=g.labeler_login,
+                                     updated_at=g.updated_at,
+                                     created_at=g.created_at)
+                new_lbl = lbl.clone(geometry=new_bmp, obj_class=new_cls)
+                new_labels.append(new_lbl)
 
     return src_ann.clone(labels=new_labels)
 
