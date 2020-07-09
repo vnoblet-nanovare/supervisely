@@ -283,6 +283,8 @@ tar -cvf my_super_model.tar  .
 
 Now your model is ready and you can Train and Test (Inference) your model. Learn more how to do it [here](https://docs.supervise.ly/neural-networks/overview). 
 
+![](./04_model_is_ready.png)
+
 ## Few notes
 
 - Now you can continue training of your model inside a platform
