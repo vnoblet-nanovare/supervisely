@@ -14,6 +14,7 @@ For now we have the following resources available:
 * [General detailed guide: Integrate any custom neural network](./tutorials/03_custom_neural_net_plugin/custom_nn_plugin.md)
 * [Deploy neural network as API](./tutorials/04_deploy_neural_net_as_api/deploy-model.md)
 * [Develop NN plugin](./tutorials/05_develop_nn_plugin/develop_plugin.md)
+* [How to attach model trained outside Supervisely (for TF object detection plugin)](./tutorials/08_attach_custom_model_tf_obj_det/README.md)
 
 ### Python SDK tutorials and cookbooks
 
