@@ -9,6 +9,7 @@ RUN apt-get update
 RUN apt-get install libpcl-dev -y
 RUN pip install python-pcl
 RUN conda install -c conda-forge scikit-image
+RUN python -m pip install open3d==0.9
 
 ############### copy code ###############
 ARG MODULE_PATH

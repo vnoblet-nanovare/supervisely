@@ -2,6 +2,7 @@
 
 import os
 import pcl
+import open3d as o3d
 
 from supervisely_lib.io.json import load_json_file
 from supervisely_lib import TaskPaths
@@ -83,11 +84,15 @@ def add_pointclouds_to_project():
                 save_path = project_dir + original_path
 
                 api.task.download_import_file(task_id, original_path, save_path)
-                points = pcl.load(save_path)
+                #points = pcl.load(save_path)
+                points = o3d.io.read_point_cloud(save_path)
 
                 new_file_name = sly.fs.get_file_name(file_name) + ".pcd"
                 pcd_save_path = os.path.join(os.path.dirname(save_path), new_file_name)
-                pcl.save(points, pcd_save_path)
+                #pcl.save(points, pcd_save_path)
+                # https://stackoverflow.com/questions/51350493/convertion-of-ply-format-to-pcd-format/62488893#62488893
+                # https://stackoverflow.com/questions/61774682/converting-from-ply-to-pcd-format
+                o3d.io.write_point_cloud(pcd_save_path, points, write_ascii=True)
 
                 item_name = api.pointcloud.get_free_name(ds_info.id, new_file_name)
                 item_info = api.pointcloud.upload_path(ds_info.id, item_name, pcd_save_path)
