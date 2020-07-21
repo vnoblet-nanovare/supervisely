@@ -34,6 +34,8 @@ For now we have the following resources available:
 * [Custom data pipeline: upload -> auto labeling jobs -> move labeled data to "secret" project](./jupyterlab_scripts/src/tutorials/11_custom_data_pipeline/custom_data_pipeline.ipynb)
 * [Filter images in different projects and combine results into a new project](./jupyterlab_scripts/src/tutorials/12_filter_and_combine_images/filter_combine_images.ipynb)
 * [How to apply NN (UNet/YOLO/Mask-RCNN) to the image from sources](./jupyterlab_scripts/src/tutorials/13_nn_inference_from_sources/README.md)
+* [Apply NN to image parts (slidign window inference)](./tutorials/09_sliding_window/readme.md)
+
 
 #### Cookbooks
 
