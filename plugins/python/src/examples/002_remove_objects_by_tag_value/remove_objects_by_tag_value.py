@@ -80,5 +80,6 @@ for dataset in api.dataset.get_list(project.id):
         new_image_infos = api.image.upload_ids(new_dataset.id, image_names, image_ids)
         new_image_ids = [img_info.id for img_info in new_image_infos]
         api.annotation.upload_anns(new_image_ids, new_anns)
+        progress.iters_done_report(len(batch))
 
 sly.logger.info('PROJECT_CREATED', extra={'event_type': sly.EventType.PROJECT_CREATED, 'project_id': dst_project.id})
