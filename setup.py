@@ -22,7 +22,7 @@ setup(
     install_requires=[
         "flask-restful>=0.3.7",
         "grpcio>=1.12.1",
-        "jsonschema>=2.6.0,<3.0.0",
+        "jsonschema>=2.6.0",
         "matplotlib>=3.0.0",
         "numpy>=1.14.3",
         "opencv-python>=3.4.1,<4.0.0",
