@@ -18,7 +18,7 @@ setup(
     packages=find_packages(include=['supervisely_lib', 'supervisely_lib.*']),
     description="Supervisely Python SDK.",
     long_description=read("README.md"),
-    url="https://github.com/supervisely/supervisely",
+    url="https://github.com/vnoblet-nanovare/supervisely",
     install_requires=[
         "flask-restful>=0.3.7",
         "grpcio>=1.12.1",
