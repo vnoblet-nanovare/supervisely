@@ -13,7 +13,7 @@ def read(fname):
 # If you need to invoke that part of the code, it is very likely you
 # already have PyTorch installed.
 setup(
-    name="supervisely",
+    name="supervisely_lib",
     version="6.0.33",
     packages=find_packages(include=['supervisely_lib', 'supervisely_lib.*']),
     description="Supervisely Python SDK.",
